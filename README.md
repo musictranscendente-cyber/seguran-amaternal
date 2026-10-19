@@ -28,8 +28,8 @@ Cloud Messaging, Storage).
 
 | Recurso | Status | Observação |
 |---|---|---|
-| 📍 Localização em tempo real | planejado | GPS enviado para o Firestore |
-| 🗺️ Movimentação / histórico | planejado | trilha dos últimos deslocamentos |
+| 📍 Localização em tempo real | ✅ base pronta | GPS enviado para o Firestore via serviço em primeiro plano |
+| 🗺️ Movimentação / histórico | ✅ base pronta | trilha dos deslocamentos no mapa |
 | 🔊 Escuta online | planejado | **com indicador de microfone do Android visível** |
 | 🔔 Sinal sonoro | planejado | toca alarme para localizar o aparelho |
 | 🛡️ Proteção contra desinstalação | planejado | Device Admin, **ícone visível** |

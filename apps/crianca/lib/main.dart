@@ -1,4 +1,7 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+
+import 'services/location_reporter.dart';
 
 // App instalado no aparelho da criança.
 //
@@ -10,7 +13,16 @@ import 'package:flutter/material.dart';
 //
 // É isso que diferencia controle parental de spyware.
 
-void main() => runApp(const AppCrianca());
+// TODO: substituir pelos IDs reais vindos do pareamento com a conta do
+// responsável (QR code / código). Fixos só para desenvolvimento.
+const _familiaIdDemo = 'familia_demo';
+const _criancaIdDemo = 'crianca_demo';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(const AppCrianca());
+}
 
 class AppCrianca extends StatelessWidget {
   const AppCrianca({super.key});
@@ -28,34 +40,61 @@ class AppCrianca extends StatelessWidget {
   }
 }
 
-class StatusPage extends StatelessWidget {
+class StatusPage extends StatefulWidget {
   const StatusPage({super.key});
+
+  @override
+  State<StatusPage> createState() => _StatusPageState();
+}
+
+class _StatusPageState extends State<StatusPage> {
+  bool _ativo = false;
+
+  Future<void> _alternar() async {
+    if (_ativo) {
+      await ServicoLocalizacao.parar();
+    } else {
+      await ServicoLocalizacao.iniciar(
+        familiaId: _familiaIdDemo,
+        criancaId: _criancaIdDemo,
+      );
+    }
+    setState(() => _ativo = !_ativo);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Segurança dos Filhos')),
-      body: const Padding(
-        padding: EdgeInsets.all(24),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.shield_outlined, size: 64),
-            SizedBox(height: 16),
-            Text(
-              'Monitoramento ativo',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Icon(
+              _ativo ? Icons.shield : Icons.shield_outlined,
+              size: 64,
+              color: _ativo ? const Color(0xFFE8826E) : null,
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 16),
             Text(
+              _ativo ? 'Monitoramento ativo' : 'Monitoramento parado',
+              style:
+                  const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            const Text(
               'Este aparelho está vinculado à conta do responsável. '
               'A localização é compartilhada e o microfone pode ser acionado '
               'remotamente — quando isso acontece, o indicador de microfone do '
               'sistema aparece no alto da tela.',
             ),
-            // TODO: iniciar o serviço em primeiro plano (flutter_foreground_task)
-            // que mantém a notificação persistente e escuta a coleção `comandos`
-            // no Firestore para localização, sinal sonoro e escuta online.
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: _alternar,
+              icon: Icon(_ativo ? Icons.stop : Icons.play_arrow),
+              label: Text(_ativo ? 'Parar' : 'Ativar monitoramento'),
+            ),
           ],
         ),
       ),

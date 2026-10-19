@@ -1,11 +1,25 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
+import 'screens/mapa_screen.dart';
+
 // App do responsável. Tela de menu equivalente ao layout de referência:
-// escuta online, locais no mapa, movimentação, sinal sonoro e contatos.
+// escuta online, locais no mapa, movimentação, sinal sonoro e proteção.
 // A escuta abre o microfone no aparelho da criança COM o indicador do
 // Android visível — não há captura oculta.
 
-void main() => runApp(const AppResponsavel());
+// TODO: substituir pelos IDs reais vindos do login (Firebase Auth) e do
+// vínculo com o aparelho da criança. Fixos só para desenvolvimento.
+const _familiaIdDemo = 'familia_demo';
+const _criancaIdDemo = 'crianca_demo';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Usa google-services.json (Android) / GoogleService-Info.plist (iOS).
+  // Rode `flutterfire configure` para gerar a configuração do projeto.
+  await Firebase.initializeApp();
+  runApp(const AppResponsavel());
+}
 
 class AppResponsavel extends StatelessWidget {
   const AppResponsavel({super.key});
@@ -26,17 +40,31 @@ class AppResponsavel extends StatelessWidget {
 class _ItemMenu {
   final IconData icone;
   final String titulo;
-  const _ItemMenu(this.icone, this.titulo);
+  final WidgetBuilder? tela;
+  const _ItemMenu(this.icone, this.titulo, {this.tela});
 }
 
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
 
-  static const _itens = <_ItemMenu>[
+  static final _itens = <_ItemMenu>[
     _ItemMenu(Icons.play_circle_outline, 'Escuta Online'),
-    _ItemMenu(Icons.place_outlined, 'Locais no Mapa'),
-    _ItemMenu(Icons.route_outlined, 'Movimentação da Criança'),
-    _ItemMenu(Icons.contacts_outlined, 'Contatos Permitidos'),
+    _ItemMenu(
+      Icons.place_outlined,
+      'Locais no Mapa',
+      tela: (_) => const MapaScreen(
+        familiaId: _familiaIdDemo,
+        criancaId: _criancaIdDemo,
+      ),
+    ),
+    _ItemMenu(
+      Icons.route_outlined,
+      'Movimentação da Criança',
+      tela: (_) => const MapaScreen(
+        familiaId: _familiaIdDemo,
+        criancaId: _criancaIdDemo,
+      ),
+    ),
     _ItemMenu(Icons.notifications_active_outlined, 'Sinal Sonoro'),
     _ItemMenu(Icons.shield_outlined, 'Proteção do Aparelho'),
   ];
@@ -56,10 +84,15 @@ class MenuPage extends StatelessWidget {
               Card(
                 child: InkWell(
                   onTap: () {
-                    // TODO: navegar para a tela de cada recurso.
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(item.titulo)),
-                    );
+                    if (item.tela != null) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: item.tela!),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${item.titulo}: em breve')),
+                      );
+                    }
                   },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
