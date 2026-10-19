@@ -1,0 +1,32 @@
+rules_version = '2';
+
+// Regras de segurança do Firestore.
+// Modelo: cada "família" tem um responsável (dono) e um ou mais perfis de criança.
+// Só o responsável autenticado dono da família lê/escreve os dados dela.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Documento da família: /familias/{familiaId}
+    // campo ownerUid = uid do responsável.
+    match /familias/{familiaId} {
+      function isOwner() {
+        return isSignedIn() && resource.data.ownerUid == request.auth.uid;
+      }
+
+      allow read, update, delete: if isOwner();
+      allow create: if isSignedIn()
+                    && request.resource.data.ownerUid == request.auth.uid;
+
+      // Subcoleções (localizacao, contatos, comandos...) herdam o dono.
+      match /{document=**} {
+        allow read, write: if isSignedIn()
+          && get(/databases/$(database)/documents/familias/$(familiaId)).data.ownerUid
+             == request.auth.uid;
+      }
+    }
+  }
+}

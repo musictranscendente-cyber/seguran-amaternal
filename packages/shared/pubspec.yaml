@@ -1,0 +1,10 @@
+name: shared
+description: Modelos e serviços compartilhados do Segurança dos Filhos.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  cloud_firestore: ^5.0.0
