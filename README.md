@@ -32,7 +32,7 @@ Cloud Messaging, Storage).
 | 🔗 Pareamento do aparelho | ✅ pronto | código de 6 dígitos gerado no app do responsável |
 | 📍 Localização em tempo real | ✅ pronto | GPS enviado via serviço em primeiro plano |
 | 🗺️ Movimentação / histórico | ✅ pronto | trilha dos deslocamentos no mapa |
-| 🔊 Escuta online | ✅ pronto | clipes curtos, **com indicador de microfone do Android visível** |
+| 🔊 Escuta online | ✅ pronto | **ao vivo (WebRTC)**, **com indicador de microfone do Android visível** |
 | 🔔 Sinal sonoro | ✅ pronto | toca alarme para localizar o aparelho |
 | 🛡️ Proteção contra desinstalação | ✅ pronto | Device Admin, **ícone visível** (ver CONFIGURACAO.md) |
 

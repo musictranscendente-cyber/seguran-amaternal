@@ -15,7 +15,7 @@ dependencies:
   firebase_storage: ^12.0.0
   firebase_messaging: ^15.0.0
   google_maps_flutter: ^2.6.0
-  just_audio: ^0.9.36 # reproduz os clipes da escuta
+  flutter_webrtc: ^0.11.7 # escuta online ao vivo
   shared:
     path: ../../packages/shared
 

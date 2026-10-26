@@ -17,8 +17,7 @@ cd ../crianca && flutter create --platforms=android --org com.seguranca .
 2. Ative:
    - **Authentication** → método **E-mail/senha** (app do responsável) e
      **Anônimo** (app da criança).
-   - **Cloud Firestore**.
-   - **Storage** (clipes da escuta).
+   - **Cloud Firestore** (também é o canal de sinalização do WebRTC).
 3. Gere a configuração em cada app:
    ```bash
    dart pub global activate flutterfire_cli
@@ -28,9 +27,13 @@ cd ../crianca && flutter create --platforms=android --org com.seguranca .
    (baixa o `google-services.json` — já está no `.gitignore`).
 4. Publique as regras:
    ```bash
-   firebase deploy --only firestore:rules,storage
+   firebase deploy --only firestore:rules
    ```
-   (usando `backend/firestore.rules` e `backend/storage.rules`).
+   (usando `backend/firestore.rules`).
+
+> A escuta online é **ao vivo via WebRTC**, com o Firestore apenas como canal
+> de sinalização — não usa Storage. O `backend/storage.rules` fica no repo caso
+> você queira guardar gravações no futuro.
 
 ## 2. Chave do Google Maps (app do responsável)
 
@@ -112,6 +115,23 @@ class AdminReceiver : DeviceAdminReceiver()
 
 **d.** No aparelho da criança, ative em: Configurações → Segurança →
 Apps de administração do dispositivo → "Segurança dos Filhos".
+
+## 4b. Escuta ao vivo (WebRTC)
+
+A escuta usa WebRTC com o STUN público do Google. Na maioria das redes o áudio
+conecta direto entre os dois celulares. Em redes mais fechadas (NAT simétrico,
+alguns 4G/5G corporativos) pode ser necessário um servidor **TURN**:
+
+- Opção grátis para testar: rode um `coturn` próprio, ou use um TURN gratuito.
+- Depois é só acrescentar o servidor em `iceServers`, nos arquivos
+  `apps/crianca/lib/services/webrtc_sender.dart` e
+  `apps/responsavel/lib/services/webrtc_receiver.dart`:
+  ```dart
+  {'urls': 'turn:SEU_TURN:3478', 'username': 'user', 'credential': 'senha'},
+  ```
+
+As permissões `RECORD_AUDIO` e `FOREGROUND_SERVICE_MICROPHONE` (passo 3) são o
+que o microfone da criança precisa — e o que faz o indicador aparecer.
 
 ## 5. Rodar
 

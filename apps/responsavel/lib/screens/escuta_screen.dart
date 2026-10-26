@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:shared/shared.dart';
 
-/// Escuta online. Liga a flag `escutaAtiva`; o aparelho da criança grava
-/// clipes curtos e envia, que vão tocando aqui conforme chegam.
+import '../services/webrtc_receiver.dart';
+
+/// Escuta online AO VIVO (WebRTC). Ao iniciar, liga a flag `escutaAtiva`
+/// (o aparelho da criança começa a transmitir o microfone) e abre a conexão
+/// para reproduzir o áudio em tempo real.
 ///
 /// Transparência: enquanto a escuta está ligada, o microfone do aparelho da
-/// criança fica em uso e o Android exibe o indicador de microfone. Não existe
-/// captura silenciosa.
+/// criança fica em uso e o Android exibe o indicador de microfone.
 class EscutaScreen extends StatefulWidget {
   const EscutaScreen({
     super.key,
@@ -24,109 +25,97 @@ class EscutaScreen extends StatefulWidget {
 
 class _EscutaScreenState extends State<EscutaScreen> {
   final _familia = FamiliaService();
-  final _player = AudioPlayer();
-  String? _ultimoTocado;
-  bool _autoReproduzir = true;
+  WebRtcReceiver? _receiver;
+  bool _ligada = false;
+  bool _conectado = false;
+  bool _ocupado = false;
 
-  Future<void> _tocar(ClipeAudio clipe) async {
-    if (_ultimoTocado == clipe.id) return;
-    _ultimoTocado = clipe.id;
-    try {
-      await _player.setUrl(clipe.url);
-      await _player.play();
-    } catch (_) {/* clipe indisponível */}
+  Future<void> _iniciar() async {
+    setState(() => _ocupado = true);
+    await _familia.definirEscuta(widget.familiaId, widget.criancaId, true);
+    _receiver = WebRtcReceiver(
+      familiaId: widget.familiaId,
+      criancaId: widget.criancaId,
+    );
+    await _receiver!.iniciar(onConectado: () {
+      if (mounted) setState(() => _conectado = true);
+    });
+    if (mounted) {
+      setState(() {
+        _ligada = true;
+        _ocupado = false;
+      });
+    }
+  }
+
+  Future<void> _parar() async {
+    setState(() => _ocupado = true);
+    await _familia.definirEscuta(widget.familiaId, widget.criancaId, false);
+    await _receiver?.parar();
+    _receiver = null;
+    if (mounted) {
+      setState(() {
+        _ligada = false;
+        _conectado = false;
+        _ocupado = false;
+      });
+    }
   }
 
   @override
   void dispose() {
-    _player.dispose();
+    // Garante desligar a escuta ao sair da tela.
+    if (_ligada) {
+      _familia.definirEscuta(widget.familiaId, widget.criancaId, false);
+    }
+    _receiver?.parar();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final cor = const Color(0xFFE8826E);
+    final String texto;
+    if (!_ligada) {
+      texto = 'Escuta desligada.';
+    } else if (_conectado) {
+      texto = 'Conectado — ouvindo ao vivo.\n'
+          'O indicador de microfone aparece no aparelho da criança.';
+    } else {
+      texto = 'Conectando ao aparelho da criança…';
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Escuta Online')),
-      body: Column(
-        children: [
-          StreamBuilder<bool>(
-            stream: _familia.escutaAtiva(widget.familiaId, widget.criancaId),
-            builder: (context, snap) {
-              final ativa = snap.data ?? false;
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                color: ativa
-                    ? const Color(0xFFE8826E).withOpacity(0.12)
-                    : null,
-                child: Column(
-                  children: [
-                    Icon(ativa ? Icons.mic : Icons.mic_off,
-                        size: 56,
-                        color: ativa ? const Color(0xFFE8826E) : Colors.grey),
-                    const SizedBox(height: 12),
-                    Text(
-                      ativa
-                          ? 'Escuta ligada — o aparelho está enviando áudio '
-                              '(o indicador de microfone aparece lá).'
-                          : 'Escuta desligada.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      icon: Icon(ativa ? Icons.stop : Icons.hearing),
-                      label: Text(ativa ? 'Parar escuta' : 'Iniciar escuta'),
-                      onPressed: () => _familia.definirEscuta(
-                          widget.familiaId, widget.criancaId, !ativa),
-                    ),
-                  ],
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _ligada
+                    ? (_conectado ? Icons.hearing : Icons.hourglass_top)
+                    : Icons.mic_off,
+                size: 80,
+                color: _ligada ? cor : Colors.grey,
+              ),
+              const SizedBox(height: 24),
+              Text(texto, textAlign: TextAlign.center),
+              const SizedBox(height: 32),
+              FilledButton.icon(
+                icon: Icon(_ligada ? Icons.stop : Icons.hearing),
+                label: Text(_ligada ? 'Parar escuta' : 'Iniciar escuta'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 32, vertical: 16),
                 ),
-              );
-            },
+                onPressed: _ocupado ? null : (_ligada ? _parar : _iniciar),
+              ),
+            ],
           ),
-          SwitchListTile(
-            title: const Text('Reproduzir automaticamente'),
-            value: _autoReproduzir,
-            onChanged: (v) => setState(() => _autoReproduzir = v),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: StreamBuilder<List<ClipeAudio>>(
-              stream: _familia.clipes(widget.familiaId, widget.criancaId),
-              builder: (context, snap) {
-                final clipes = snap.data ?? const <ClipeAudio>[];
-                if (_autoReproduzir && clipes.isNotEmpty) {
-                  WidgetsBinding.instance
-                      .addPostFrameCallback((_) => _tocar(clipes.first));
-                }
-                if (clipes.isEmpty) {
-                  return const Center(
-                      child: Text('Nenhum áudio recebido ainda.'));
-                }
-                return ListView(
-                  children: [
-                    for (final c in clipes)
-                      ListTile(
-                        leading: const Icon(Icons.graphic_eq),
-                        title: Text(_hora(c.quando)),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.play_arrow),
-                          onPressed: () {
-                            _ultimoTocado = null;
-                            _tocar(c);
-                          },
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
-
-  String _hora(DateTime t) =>
-      '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:${t.second.toString().padLeft(2, '0')}';
 }

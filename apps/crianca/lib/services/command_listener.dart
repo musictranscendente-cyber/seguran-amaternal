@@ -4,7 +4,7 @@ import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared/shared.dart';
 
-import 'audio_streamer.dart';
+import 'webrtc_sender.dart';
 
 // Reage, no aparelho da criança, aos comandos e à flag de escuta vindos do
 // responsável. Roda enquanto o app está vivo (o serviço em primeiro plano
@@ -22,7 +22,7 @@ class CommandListener {
 
   StreamSubscription? _comandosSub;
   StreamSubscription? _escutaSub;
-  AudioStreamer? _streamer;
+  WebRtcSender? _sender;
 
   void iniciar() {
     _comandosSub = _familia
@@ -49,10 +49,11 @@ class CommandListener {
 
   Future<void> _tratarEscuta(bool ativa) async {
     if (ativa) {
-      _streamer ??= AudioStreamer(familiaId: familiaId, criancaId: criancaId);
-      await _streamer!.iniciar();
+      _sender ??= WebRtcSender(familiaId: familiaId, criancaId: criancaId);
+      await _sender!.iniciar();
     } else {
-      await _streamer?.parar();
+      await _sender?.parar();
+      _sender = null;
     }
   }
 
@@ -75,6 +76,6 @@ class CommandListener {
   Future<void> dispose() async {
     await _comandosSub?.cancel();
     await _escutaSub?.cancel();
-    await _streamer?.parar();
+    await _sender?.parar();
   }
 }

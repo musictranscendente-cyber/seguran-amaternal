@@ -16,8 +16,7 @@ dependencies:
   firebase_messaging: ^15.0.0
   geolocator: ^12.0.0
   flutter_foreground_task: ^8.0.0 # notificação persistente visível
-  record: ^5.1.0 # grava áudio da escuta (mic indicator do Android aparece)
-  path_provider: ^2.1.0
+  flutter_webrtc: ^0.11.7 # escuta online ao vivo (mic indicator do Android aparece)
   flutter_ringtone_player: ^4.0.0 # sinal sonoro
   shared_preferences: ^2.2.0
   shared:
