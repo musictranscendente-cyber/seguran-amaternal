@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// Clipes de áudio da escuta online ficam em:
+//   familias/{familiaId}/criancas/{criancaId}/audio/{arquivo}
+// Qualquer usuário autenticado da família lê/escreve; a validação fina de
+// quem é dono/criança é reforçada pelas regras do Firestore no app.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /familias/{familiaId}/criancas/{criancaId}/audio/{arquivo} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

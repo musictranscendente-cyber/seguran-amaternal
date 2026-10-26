@@ -1,6 +1,34 @@
 /// Modelos compartilhados entre o app do responsável e o da criança.
 library;
 
+/// Perfil de uma criança monitorada.
+class Crianca {
+  final String id;
+  final String nome;
+  final String? childUid;
+  final bool escutaAtiva;
+  final LocalizacaoReportada? ultimaLocalizacao;
+
+  const Crianca({
+    required this.id,
+    required this.nome,
+    this.childUid,
+    this.escutaAtiva = false,
+    this.ultimaLocalizacao,
+  });
+
+  factory Crianca.fromMap(String id, Map<String, dynamic> m) => Crianca(
+        id: id,
+        nome: m['nome'] as String? ?? 'Criança',
+        childUid: m['childUid'] as String?,
+        escutaAtiva: m['escutaAtiva'] as bool? ?? false,
+        ultimaLocalizacao: m['ultimaLocalizacao'] == null
+            ? null
+            : LocalizacaoReportada.fromMap(
+                (m['ultimaLocalizacao'] as Map).cast<String, dynamic>()),
+      );
+}
+
 /// Posição reportada pelo aparelho da criança.
 class LocalizacaoReportada {
   final double latitude;
@@ -31,23 +59,29 @@ class LocalizacaoReportada {
       );
 }
 
-/// Contato autorizado a falar com a criança.
-class ContatoPermitido {
-  final String nome;
-  final String telefone;
+/// Clipe de áudio da escuta online (URL no Firebase Storage).
+class ClipeAudio {
+  final String id;
+  final String url;
+  final DateTime quando;
 
-  const ContatoPermitido({required this.nome, required this.telefone});
+  const ClipeAudio({required this.id, required this.url, required this.quando});
 
-  Map<String, dynamic> toMap() => {'nome': nome, 'telefone': telefone};
+  Map<String, dynamic> toMap() => {
+        'url': url,
+        'quando': quando.toIso8601String(),
+      };
 
-  factory ContatoPermitido.fromMap(Map<String, dynamic> m) =>
-      ContatoPermitido(nome: m['nome'] as String, telefone: m['telefone'] as String);
+  factory ClipeAudio.fromMap(String id, Map<String, dynamic> m) => ClipeAudio(
+        id: id,
+        url: m['url'] as String,
+        quando: DateTime.parse(m['quando'] as String),
+      );
 }
 
-/// Comandos que o responsável envia e o aparelho da criança executa.
-/// Todos têm efeito VISÍVEL no aparelho monitorado (notificação / indicador).
+/// Comandos pontuais que o responsável envia e o aparelho executa.
+/// Todos têm efeito VISÍVEL no aparelho monitorado.
 enum TipoComando {
-  escutaOnline, // abre o microfone — Android exibe indicador de uso do mic
   sinalSonoro, // toca alarme para localizar o aparelho
   atualizarLocalizacao,
 }

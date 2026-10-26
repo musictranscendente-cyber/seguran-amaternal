@@ -1,31 +1,63 @@
 rules_version = '2';
 
-// Regras de segurança do Firestore.
-// Modelo: cada "família" tem um responsável (dono) e um ou mais perfis de criança.
-// Só o responsável autenticado dono da família lê/escreve os dados dela.
+// Modelo:
+//   familias/{familiaId}  -> { ownerUid, nome }
+//     criancas/{criancaId} -> { nome, childUid, ultimaLocalizacao, escutaAtiva }
+//       historico/{id}, comandos/{id}, audio/{id}
+//   pareamentos/{codigo}  -> { familiaId, criancaId, ownerUid, expiraEm, usado }
+//
+// Responsável (dono, autenticado por e-mail/senha) tem acesso total à sua família.
+// Aparelho da criança (autenticado anônimo) só acessa a criança que reivindicou.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+
+    function familia(familiaId) {
+      return get(/databases/$(database)/documents/familias/$(familiaId)).data;
     }
 
-    // Documento da família: /familias/{familiaId}
-    // campo ownerUid = uid do responsável.
+    // Código de pareamento: o responsável cria, o aparelho da criança lê uma vez.
+    match /pareamentos/{codigo} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn()
+        && request.resource.data.ownerUid == uid();
+      allow update: if signedIn(); // permite marcar "usado: true" ao vincular
+    }
+
     match /familias/{familiaId} {
       function isOwner() {
-        return isSignedIn() && resource.data.ownerUid == request.auth.uid;
+        return signedIn() && resource.data.ownerUid == uid();
       }
 
+      allow create: if signedIn() && request.resource.data.ownerUid == uid();
       allow read, update, delete: if isOwner();
-      allow create: if isSignedIn()
-                    && request.resource.data.ownerUid == request.auth.uid;
 
-      // Subcoleções (localizacao, contatos, comandos...) herdam o dono.
-      match /{document=**} {
-        allow read, write: if isSignedIn()
-          && get(/databases/$(database)/documents/familias/$(familiaId)).data.ownerUid
-             == request.auth.uid;
+      match /criancas/{criancaId} {
+        function donoDaFamilia() {
+          return signedIn() && familia(familiaId).ownerUid == uid();
+        }
+        function ehACrianca() {
+          return signedIn() && resource.data.childUid == uid();
+        }
+        // Reivindicação: um aparelho sem dono ainda pode se registrar.
+        function reivindicando() {
+          return signedIn()
+            && resource.data.childUid == null
+            && request.resource.data.childUid == uid();
+        }
+
+        allow read: if donoDaFamilia() || ehACrianca();
+        allow create, delete: if donoDaFamilia();
+        allow update: if donoDaFamilia() || ehACrianca() || reivindicando();
+
+        // Subcoleções: dono ou a própria criança.
+        match /{sub=**} {
+          allow read, write: if donoDaFamilia()
+            || (signedIn()
+                && get(/databases/$(database)/documents/familias/$(familiaId)/criancas/$(criancaId)).data.childUid == uid());
+        }
       }
     }
   }

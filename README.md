@@ -28,12 +28,13 @@ Cloud Messaging, Storage).
 
 | Recurso | Status | Observação |
 |---|---|---|
-| 📍 Localização em tempo real | ✅ base pronta | GPS enviado para o Firestore via serviço em primeiro plano |
-| 🗺️ Movimentação / histórico | ✅ base pronta | trilha dos deslocamentos no mapa |
-| 🔊 Escuta online | planejado | **com indicador de microfone do Android visível** |
-| 🔔 Sinal sonoro | planejado | toca alarme para localizar o aparelho |
-| 🛡️ Proteção contra desinstalação | planejado | Device Admin, **ícone visível** |
-| 👥 Controle de contatos | planejado | lista de permitidos + alerta de número desconhecido |
+| 🔐 Login (responsável) | ✅ pronto | e-mail/senha (Firebase Auth) |
+| 🔗 Pareamento do aparelho | ✅ pronto | código de 6 dígitos gerado no app do responsável |
+| 📍 Localização em tempo real | ✅ pronto | GPS enviado via serviço em primeiro plano |
+| 🗺️ Movimentação / histórico | ✅ pronto | trilha dos deslocamentos no mapa |
+| 🔊 Escuta online | ✅ pronto | clipes curtos, **com indicador de microfone do Android visível** |
+| 🔔 Sinal sonoro | ✅ pronto | toca alarme para localizar o aparelho |
+| 🛡️ Proteção contra desinstalação | ✅ pronto | Device Admin, **ícone visível** (ver CONFIGURACAO.md) |
 
 ## Fora do escopo (intencionalmente)
 
@@ -44,19 +45,33 @@ Para manter o app publicável e dentro da lei, **não** implementa:
 - App oculto / sem ícone / indetectável.
 
 Essas capacidades são as de *stalkerware*: funcionam igual contra qualquer adulto, violam as
-políticas do Google Play e do WhatsApp, e são crime em muitos lugares. A proteção equivalente para
-uma criança pequena é feita pelo **controle de contatos** (quem pode falar com ela), que é mais
-eficaz e legítimo.
+políticas do Google Play e do WhatsApp, e são crime em muitos lugares. Para ler o WhatsApp de uma
+criança pequena cujo aparelho você controla, use o recurso **Aparelhos conectados** do próprio
+WhatsApp (conecta a conta dela ao seu celular).
 
 ## Começando
 
 Pré-requisitos: Flutter SDK, conta Firebase, FlutterFire CLI.
 
-```bash
-# instalar dependências de cada app
-cd apps/responsavel && flutter pub get
-cd ../crianca && flutter pub get
+O passo a passo completo (gerar as pastas Android, configurar o Firebase, chave do Maps,
+permissões, regras e a proteção contra desinstalação) está em **[CONFIGURACAO.md](CONFIGURACAO.md)**.
 
-# configurar Firebase (gera firebase_options.dart)
+Resumo:
+
+```bash
+# 1. gerar as pastas de plataforma
+cd apps/responsavel && flutter create --platforms=android --org com.seguranca .
+cd ../crianca && flutter create --platforms=android --org com.seguranca .
+
+# 2. configurar Firebase em cada app (gera google-services.json)
 flutterfire configure
+
+# 3. rodar
+cd apps/responsavel && flutter run   # celular do responsável
+cd apps/crianca && flutter run       # aparelho da criança
 ```
+
+### Fluxo de uso
+1. App do responsável: criar conta → **Adicionar** criança → anotar o **código**.
+2. Aparelho da criança: digitar o código → **Ativar monitoramento**.
+3. Mapa, sinal sonoro e escuta online (com indicador de microfone) funcionando.
