@@ -49,7 +49,27 @@ políticas do Google Play e do WhatsApp, e são crime em muitos lugares. Para le
 criança pequena cujo aparelho você controla, use o recurso **Aparelhos conectados** do próprio
 WhatsApp (conecta a conta dela ao seu celular).
 
-## Começando
+## Compilar pelo GitHub (sem computador)
+
+O GitHub Actions compila os dois APKs na nuvem a cada push (workflow
+`.github/workflows/build-apks.yml`).
+
+**Baixar os APKs:** repositório → aba **Actions** → clique na execução mais
+recente (verde) → seção **Artifacts** → baixe `apk-responsavel` e `apk-crianca`.
+
+**Para os apps funcionarem de verdade** (login, localização, escuta), adicione
+em Settings → Secrets and variables → Actions:
+
+| Secret | Conteúdo |
+|---|---|
+| `GOOGLE_SERVICES_RESPONSAVEL` | o `google-services.json` do app responsável, em base64 |
+| `GOOGLE_SERVICES_CRIANCA` | o `google-services.json` do app criança, em base64 |
+| `MAPS_API_KEY` | a chave do Google Maps |
+
+Sem esses secrets, o build usa uma configuração **provisória**: os APKs
+instalam e abrem, mas não conectam ao Firebase.
+
+## Começando (no seu computador, alternativa)
 
 Pré-requisitos: Flutter SDK, conta Firebase, FlutterFire CLI.
 
