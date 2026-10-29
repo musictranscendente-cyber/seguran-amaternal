@@ -7,6 +7,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -59,7 +63,26 @@ jobs:
 
       - name: Compilar APK (debug)
         working-directory: apps/${{ matrix.app }}
-        run: flutter build apk --debug
+        run: |
+          set -o pipefail
+          flutter build apk --debug 2>&1 | tee /tmp/build-${{ matrix.app }}.log
+
+      - name: Publicar erro como issue (se falhar)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "Build do app **${{ matrix.app }}** falhou (run ${{ github.run_id }})."
+            echo ""
+            echo '```'
+            tail -n 120 /tmp/build-${{ matrix.app }}.log 2>/dev/null || echo "(sem log)"
+            echo '```'
+          } > /tmp/corpo.md
+          gh issue create \
+            --title "Build falhou: ${{ matrix.app }} (run ${{ github.run_id }})" \
+            --body-file /tmp/corpo.md \
+            --repo ${{ github.repository }} || true
 
       - name: Publicar APK
         uses: actions/upload-artifact@v4
