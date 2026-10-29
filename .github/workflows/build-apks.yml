@@ -32,7 +32,8 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          channel: stable # stable mais recente (compatível com geolocator 12.x)
+          flutter-version: "3.24.5" # compatível com flutter_webrtc 0.11.7
+          channel: stable
 
       - name: Gerar projeto Android
         working-directory: apps/${{ matrix.app }}

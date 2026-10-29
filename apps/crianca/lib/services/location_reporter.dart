@@ -43,7 +43,7 @@ class ReporterLocalizacaoHandler extends TaskHandler {
     if (!permitido) return;
 
     final pos = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      desiredAccuracy: LocationAccuracy.high,
     );
 
     await service.reportarLocalizacao(
@@ -64,7 +64,7 @@ class ReporterLocalizacaoHandler extends TaskHandler {
   }
 
   @override
-  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {}
+  Future<void> onDestroy(DateTime timestamp) async {}
 
   Future<bool> _garantirPermissao() async {
     var p = await Geolocator.checkPermission();

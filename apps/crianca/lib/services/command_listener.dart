@@ -59,7 +59,7 @@ class CommandListener {
 
   Future<void> _reportarAgora() async {
     final pos = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+      desiredAccuracy: LocationAccuracy.high,
     );
     await _familia.reportarLocalizacao(
       familiaId,
