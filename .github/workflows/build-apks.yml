@@ -1,10 +1,9 @@
 name: Build APKs
 
 # Compila os dois apps (responsável e criança) na nuvem e disponibiliza os
-# APKs para download. Roda a cada push na main e também no botão "Run workflow".
+# APKs para download. Roda só quando você aciona (botão "Run workflow"),
+# para não consumir o espaço grátis de artifacts do GitHub.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -90,3 +89,4 @@ jobs:
           name: apk-${{ matrix.app }}
           path: apps/${{ matrix.app }}/build/app/outputs/flutter-apk/*.apk
           if-no-files-found: warn
+          retention-days: 3 # APKs se apagam sozinhos em 3 dias (poupa espaço)
