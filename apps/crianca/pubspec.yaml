@@ -25,5 +25,11 @@ dependencies:
 dev_dependencies:
   flutter_lints: ^4.0.0
 
+# Força a implementação nativa do geolocator anterior à 4.6.0, que usa a
+# convenção de Gradle compatível com o Flutter 3.24.5 (a 4.6.x exige um
+# Flutter mais novo e quebra o build com "unknown property 'flutter'").
+dependency_overrides:
+  geolocator_android: ">=4.5.0 <4.6.0"
+
 flutter:
   uses-material-design: true
